@@ -15,9 +15,8 @@ func makeBucketArray(b uint8) unsafe.Pointer {
 	for i := 0; i < 1<<b; i++ {
 		s[i] = new(ubmap)
 	}
-	bucket := s[0]
 	// 数组首位指针就是数组指针
-	return unsafe.Pointer(&bucket)
+	return unsafe.Pointer(&s[0])
 }
 
 // 返回2^b 也就是桶个数
