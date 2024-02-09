@@ -2,6 +2,7 @@ package umap
 
 import (
 	"math/rand"
+	"reflect"
 	"time"
 	"unsafe"
 )
@@ -35,9 +36,9 @@ func tophash(hash uintptr) uint8 {
 	return uint8(hash >> (uintptrSize - 8))
 }
 
-func keyEqual(k1 any, k2 any) bool {
-	return k1 == k2
-	// return reflect.DeepEqual(k1, k2)
+func keyEqual(k1 *any, k2 *any) bool {
+	// return k1 == k2
+	return reflect.DeepEqual(k1, k2)
 }
 
 func overLoadFactor(count int, b uint8) bool {

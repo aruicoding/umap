@@ -1,7 +1,6 @@
 package umap
 
 import (
-	"fmt"
 	"unsafe"
 )
 
@@ -16,7 +15,6 @@ func (b *ubmap) overflow() *ubmap {
 }
 
 func (b *ubmap) setoverflow(ovf *ubmap) {
-	fmt.Println(b)
 	*(**ubmap)(unsafe.Add(unsafe.Pointer(b), overflowOffset)) = ovf
 }
 

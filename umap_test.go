@@ -15,11 +15,36 @@ func TestNew(t *testing.T) {
 func TestSet(t *testing.T) {
 	cap := uint(10)
 	m := umap.New(cap)
-	m.Set("go", "0")
-	m.Set("java", "0")
-	m.Set("javaScript", "0")
-	m.Set("php", "0")
-	// for i := 0; i < 10; i++ {
-	// 	m.Set(fmt.Sprintf("%d", i), fmt.Sprintf("%d", i))
-	// }
+	{
+		m.Set("go", "0")
+		m.Set("go", "1")
+		t.Log(m.Get("go"))
+	}
+	{
+		m.Set(struct{ name string }{"sandwich"}, "food")
+		t.Log(m.Get(struct{ name string }{"sandwich"}))
+		m.Set("food", struct{ name string }{"sandwich"})
+		t.Log(m.Get("food"))
+		m.Set([]string{"apple", "banana", "peach"}, "fruits")
+		t.Log(m.Get([]string{"apple", "banana", "peach"}))
+		m.Set("fruits", []string{"apple", "banana", "peach"})
+		t.Log(m.Get("fruits"))
+		m.Set(map[string]int{"bird": 0, "cat": 1}, true)
+		t.Log(m.Get(map[string]int{"bird": 0, "cat": 1}))
+		m.Set(true, map[string]int{"bird": 0, "cat": 1})
+		t.Log(m.Get(true))
+	}
+}
+
+func TestDel(t *testing.T) {
+	um := umap.New(1)
+	{
+		um.Set("id", 1)
+		t.Log(um.Get("id"))
+		um.Del("id")
+		t.Log(um.Get("id"))
+		um.Set("id", 1)
+		t.Log(um.Get("id"))
+	}
+
 }

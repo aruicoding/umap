@@ -54,6 +54,10 @@ func (u *umap) Len() int {
 }
 
 func (u *umap) Set(k any, v any) {
+	u.count++
+	if u.buckets == nil || overLoadFactor(u.count, u.b) || tooManyOverflowBuckets(u.noverflow, u.b) {
+		u.hashGrow()
+	}
 	hash := u.hasher(k)
 	bindex := hash & bucketMask((u.b))
 	bucket := *(**ubmap)(unsafe.Add(u.buckets, bucketSize*bindex))
@@ -68,17 +72,16 @@ func (u *umap) Set(k any, v any) {
 			bucket = bucket.overflow()
 			i = 0
 		}
-		if bucket.tophash[i] > 0 {
-			continue
-		}
 		if bucket.tophash[i] == top {
-			kk := *(*any)(unsafe.Add(unsafe.Pointer(bucket), kvOffset*i))
-			if keyEqual(k, kk) {
-				*(*any)(unsafe.Add(unsafe.Pointer(bucket), keysOffset+kvOffset*i)) = v
+			kk := *(*any)(unsafe.Add(unsafe.Pointer(bucket), dataOffset+kvOffset*i))
+			if keyEqual(&k, &kk) {
+				*(*any)(unsafe.Add(unsafe.Pointer(bucket), dataOffset+keysOffset+kvOffset*i)) = v
 				return
 			}
 		}
-
+		if bucket.tophash[i] > 0 {
+			continue
+		}
 		bucket.tophash[i] = top
 		*(*any)(unsafe.Add(unsafe.Pointer(bucket), dataOffset+kvOffset*i)) = k
 		*(*any)(unsafe.Add(unsafe.Pointer(bucket), dataOffset+keysOffset+kvOffset*i)) = v
@@ -101,7 +104,7 @@ func (u *umap) Get(k any) any {
 		}
 		if bucket.tophash[i] == top {
 			kk := *(*any)(unsafe.Add(unsafe.Pointer(bucket), dataOffset+kvOffset*i))
-			if keyEqual(k, kk) {
+			if keyEqual(&k, &kk) {
 				return *(*any)(unsafe.Add(unsafe.Pointer(bucket), dataOffset+keysOffset+kvOffset*i))
 			}
 		}
@@ -124,11 +127,12 @@ func (u *umap) Del(k any) {
 		}
 		if bucket.tophash[i] == top {
 			kk := *(*any)(unsafe.Add(unsafe.Pointer(bucket), dataOffset+kvOffset*i))
-			if keyEqual(k, kk) {
-				bucket.tophash[i] = 0
+			if keyEqual(&k, &kk) {
 				*(*any)(unsafe.Add(unsafe.Pointer(bucket), dataOffset+kvOffset*i)) = any(nil)
 				*(*any)(unsafe.Add(unsafe.Pointer(bucket), dataOffset+keysOffset+kvOffset*i)) = any(nil)
 			}
+			bucket.tophash[i] = 0
+			return
 		}
 	}
 }
