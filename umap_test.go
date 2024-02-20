@@ -1,6 +1,8 @@
 package umap_test
 
 import (
+	"fmt"
+	"math/rand"
 	"testing"
 
 	"github.com/aruicoding/umap"
@@ -47,4 +49,25 @@ func TestDel(t *testing.T) {
 		t.Log(um.Get("id"))
 	}
 
+}
+
+func TestGrow(t *testing.T) {
+	m := umap.New(0)
+	arr := make([]string, 0)
+	testNum := 3500000
+	for i := 0; i < testNum; i++ {
+		k := fmt.Sprintf("key%08d-%09d", i, i*rand.Intn(10))
+		m.Set(k, i)
+		arr = append(arr, k)
+	}
+	var ks int
+	for i, k := range arr {
+		if v := m.Get(k); v != nil {
+			if i != v {
+				t.Log(k, v)
+			}
+			ks++
+		}
+	}
+	t.Log(ks == testNum, ks)
 }

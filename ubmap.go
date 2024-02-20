@@ -18,6 +18,6 @@ func (b *ubmap) setoverflow(ovf *ubmap) {
 	*(**ubmap)(unsafe.Add(unsafe.Pointer(b), overflowOffset)) = ovf
 }
 
-func (b *ubmap) keys() unsafe.Pointer {
-	return unsafe.Add(unsafe.Pointer(b), dataOffset)
+func (b *ubmap) evacuated() bool {
+	return b.tophash[0] > emptyOne && b.tophash[0] < minTopHash
 }
