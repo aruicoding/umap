@@ -148,7 +148,7 @@ func (u *umap) Get(k any) any {
 
 func (u *umap) Del(k any) {
 	hash := u.hasher(k)
-	bindex := hash & bucketMask((u.b))
+	bindex := hash & bucketMask(u.b)
 	bucket := *(**ubmap)(unsafe.Add(u.buckets, bucketSize*bindex))
 	top := tophash(hash)
 	for i := uintptr(0); i <= bucketCnt; i++ {
@@ -172,9 +172,50 @@ func (u *umap) Del(k any) {
 }
 
 func (u *umap) Iteration(fn callback) {
-	// 获取k v
-	// 调用callback
-	fn(nil, nil)
+	var it []bool
+	u.flags = iterator
+	if u.growing() {
+		it = make([]bool, bucketShift(u.b-1))
+	}
+	for i := uintptr(0); i < bucketShift(u.b); i++ {
+		bucket := *(**ubmap)(unsafe.Add(u.buckets, bucketSize*i))
+		if u.growing() {
+			u.flags = oldIterator
+			oi := i & u.oldbucketMask()
+			bucket := *(**ubmap)(unsafe.Add(u.oldbuckets, bucketSize*oi))
+			if !it[oi] && !bucket.evacuated() {
+				it[oi] = true
+				for i := uintptr(0); i <= bucketCnt; i++ {
+					if i == bucketCnt {
+						bucket = bucket.overflow()
+						if bucket == nil {
+							break
+						}
+						i = 0
+					}
+					k := *(*any)(unsafe.Add(unsafe.Pointer(bucket), dataOffset+kvOffset*i))
+					v := *(*any)(unsafe.Add(unsafe.Pointer(bucket), dataOffset+keysOffset+kvOffset*i))
+					if k != any(nil) {
+						fn(k, v)
+					}
+				}
+			}
+		}
+		for i := uintptr(0); i <= bucketCnt; i++ {
+			if i == bucketCnt {
+				bucket = bucket.overflow()
+				if bucket == nil {
+					break
+				}
+				i = 0
+			}
+			k := *(*any)(unsafe.Add(unsafe.Pointer(bucket), dataOffset+kvOffset*i))
+			v := *(*any)(unsafe.Add(unsafe.Pointer(bucket), dataOffset+keysOffset+kvOffset*i))
+			if k != any(nil) {
+				fn(k, v)
+			}
+		}
+	}
 }
 
 func (u *umap) incrnoverflow() {

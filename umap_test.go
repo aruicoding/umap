@@ -70,4 +70,11 @@ func TestGrow(t *testing.T) {
 		}
 	}
 	t.Log(ks == testNum, ks)
+	ks = 0
+	m.Iteration(func(k any, v any) {
+		if m.Get(k) == v {
+			ks++
+		}
+	})
+	t.Log(ks == testNum, ks)
 }
